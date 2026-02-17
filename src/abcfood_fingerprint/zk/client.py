@@ -176,15 +176,28 @@ class ZKClient:
         except Exception:
             pass
 
-        users = self._conn.get_users() or []
-        attendance = self._conn.get_attendance() or []
+        user_count = 0
+        try:
+            users = self._conn.get_users() or []
+            user_count = len(users)
+        except Exception:
+            pass
+
+        attendance_count = 0
+        try:
+            attendance_count = len(self._conn.get_attendance() or [])
+        except Exception:
+            pass
 
         fp_count = 0
         try:
-            templates = self._conn.get_templates() or []
-            fp_count = len(templates)
+            fp_count = self._conn.get_fp_version() or 0
         except Exception:
-            pass
+            try:
+                templates = self._conn.get_templates() or []
+                fp_count = len(templates)
+            except Exception:
+                pass
 
         device_time = None
         try:
@@ -198,9 +211,9 @@ class ZKClient:
             platform=str(platform),
             device_name=str(device_name),
             mac_address=str(mac),
-            user_count=len(users),
+            user_count=user_count,
             fp_count=fp_count,
-            attendance_count=len(attendance),
+            attendance_count=attendance_count,
             device_time=device_time,
         )
 

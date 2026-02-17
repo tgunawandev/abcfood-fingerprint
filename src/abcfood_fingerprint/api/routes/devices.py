@@ -48,11 +48,14 @@ class TimeResponse(BaseModel):
 
 
 @router.get("/devices")
-def list_devices(pool: DevicePool = Depends(get_device_pool)):
-    """List all configured devices with online status."""
+def list_devices(
+    status: bool = False,
+    pool: DevicePool = Depends(get_device_pool),
+):
+    """List all configured devices. Use ?status=true to check live connectivity."""
     from abcfood_fingerprint.core.device_manager import get_all_device_statuses
 
-    statuses = get_all_device_statuses(pool)
+    statuses = get_all_device_statuses(pool, check_online=status)
     return [
         DeviceResponse(
             key=s.key,

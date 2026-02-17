@@ -36,12 +36,21 @@ def get_device_status(device_key: str, pool: Optional[DevicePool] = None) -> Dev
     return status
 
 
-def get_all_device_statuses(pool: Optional[DevicePool] = None) -> List[DeviceStatus]:
-    """Get status for all configured devices."""
+def get_all_device_statuses(pool: Optional[DevicePool] = None, check_online: bool = True) -> List[DeviceStatus]:
+    """Get status for all configured devices.
+
+    Args:
+        pool: Device pool instance.
+        check_online: If True, connect to devices to check status. If False, return config only.
+    """
     p = pool or get_pool()
     statuses = []
     for key in p.device_keys():
-        statuses.append(get_device_status(key, p))
+        if check_online:
+            statuses.append(get_device_status(key, p))
+        else:
+            config = p.get_config(key)
+            statuses.append(DeviceStatus(key=key, config=config, last_check=datetime.now()))
     return statuses
 
 
