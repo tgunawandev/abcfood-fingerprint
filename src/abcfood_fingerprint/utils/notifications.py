@@ -57,12 +57,22 @@ def send_mattermost_message(message: str) -> bool:
         return False
 
 
-def notify_backup_success(device: str, users: int, fingerprints: int, s3_key: str) -> None:
+def notify_backup_success(
+    device: str,
+    users: int,
+    fingerprints: int,
+    s3_key: str,
+    attendance: int = 0,
+) -> None:
     """Notify about successful backup."""
+    counts = f"Users: {users}, Fingerprints: {fingerprints}"
+    if attendance:
+        counts += f", Attendance: {attendance}"
+
     msg = (
         f"<b>{SERVICE_NAME} - Backup OK</b>\n"
         f"Device: {device}\n"
-        f"Users: {users}, Fingerprints: {fingerprints}\n"
+        f"{counts}\n"
         f"S3: {s3_key}"
     )
     send_telegram_message(msg)

@@ -43,6 +43,12 @@ class Settings(BaseSettings):
     TELEGRAM_CHAT_ID: str = ""
     MATTERMOST_WEBHOOK_URL: str = ""
 
+    # Scheduler & Cache
+    SCHEDULER_ENABLED: bool = True
+    CACHE_REFRESH_MINUTES: int = 5
+    BACKUP_HOUR_UTC: int = 17
+    BACKUP_MINUTE_UTC: int = 0
+
     # General
     ENVIRONMENT: str = "production"
     LOG_LEVEL: str = "INFO"

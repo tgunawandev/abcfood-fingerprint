@@ -82,7 +82,14 @@ def count_attendance(
     device: str,
     pool: DevicePool = Depends(get_device_pool),
 ):
-    """Count attendance records on a device."""
+    """Count attendance records on a device (uses cache if available)."""
+    from abcfood_fingerprint.core.cache import get_cache
+
+    # Try cache first for instant count
+    cached_count = get_cache().get_count(device)
+    if cached_count is not None:
+        return AttendanceCountResponse(device=device, count=cached_count)
+
     from abcfood_fingerprint.core.attendance import count_attendance as _count
 
     try:
@@ -93,3 +100,13 @@ def count_attendance(
         raise HTTPException(status_code=500, detail=str(e))
 
     return AttendanceCountResponse(device=device, count=count)
+
+
+@router.get("/attendance/{device}/cache")
+def cache_status(
+    device: str,
+):
+    """Get attendance cache status for a device."""
+    from abcfood_fingerprint.core.cache import get_cache
+
+    return get_cache().get_status(device)

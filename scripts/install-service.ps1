@@ -74,6 +74,21 @@ if ($tunnelToken) {
     Write-Host "  $CLOUDFLARED_SERVICE started" -ForegroundColor Green
 }
 
+# --- Secure file permissions ---
+Write-Host "`nSecuring file permissions..." -ForegroundColor Yellow
+
+# Lock install directory: SYSTEM + Administrators only
+icacls $INSTALL_DIR /inheritance:r /grant "NT AUTHORITY\SYSTEM:(OI)(CI)F" /grant "BUILTIN\Administrators:(OI)(CI)F" 2>$null
+
+# Extra-restrict .env: SYSTEM(Read) + Admins(Full)
+if (Test-Path "$INSTALL_DIR\.env") {
+    icacls "$INSTALL_DIR\.env" /inheritance:r /grant "NT AUTHORITY\SYSTEM:(R)" /grant "BUILTIN\Administrators:(F)" 2>$null
+}
+if (Test-Path "$INSTALL_DIR\.env.local") {
+    icacls "$INSTALL_DIR\.env.local" /inheritance:r /grant "NT AUTHORITY\SYSTEM:(R)" /grant "BUILTIN\Administrators:(F)" 2>$null
+}
+Write-Host "  File permissions secured" -ForegroundColor Green
+
 Write-Host "`n=== Services Registered ===" -ForegroundColor Cyan
 Write-Host "Check status: $NSSM status $SERVICE_NAME"
 Write-Host "View logs: Get-Content $INSTALL_DIR\logs\service.log -Tail 50"

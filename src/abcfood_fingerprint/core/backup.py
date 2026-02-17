@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from abcfood_fingerprint.storage.s3 import S3Client
-from abcfood_fingerprint.zk.models import BackupRecord, ZKFingerprint, ZKUser
+from abcfood_fingerprint.zk.models import BackupRecord, ZKAttendance, ZKFingerprint, ZKUser
 from abcfood_fingerprint.zk.pool import DevicePool, get_pool
 
 logger = logging.getLogger(__name__)
@@ -15,8 +15,12 @@ logger = logging.getLogger(__name__)
 def run_backup(
     device_key: str,
     pool: Optional[DevicePool] = None,
+    include_attendance: bool = False,
 ) -> Dict[str, Any]:
-    """Full backup of users + fingerprints from a device to S3.
+    """Full backup of users + fingerprints (+ attendance) from a device to S3.
+
+    When *include_attendance* is True, attendance records are included.
+    The cache is tried first for attendance data; falls back to device fetch.
 
     Returns backup metadata.
     """
@@ -28,14 +32,20 @@ def run_backup(
         users = c.get_users()
         fingerprints = c.get_fingerprints()
 
+    attendance: List[ZKAttendance] = []
+    if include_attendance:
+        attendance = _get_attendance_for_backup(device_key, p)
+
     record = BackupRecord(
         device_key=device_key,
         device_name=config.name,
         timestamp=datetime.now().isoformat(),
         users=users,
         fingerprints=fingerprints,
+        attendance=attendance,
         user_count=len(users),
         fingerprint_count=len(fingerprints),
+        attendance_count=len(attendance),
     )
 
     s3 = S3Client()
@@ -47,16 +57,36 @@ def run_backup(
         "s3_key": s3_key,
         "user_count": len(users),
         "fingerprint_count": len(fingerprints),
+        "attendance_count": len(attendance),
         "timestamp": record.timestamp,
     }
     logger.info(
-        "Backup complete for %s: %d users, %d fingerprints -> %s",
+        "Backup complete for %s: %d users, %d fingerprints, %d attendance -> %s",
         device_key,
         len(users),
         len(fingerprints),
+        len(attendance),
         s3_key,
     )
     return result
+
+
+def _get_attendance_for_backup(
+    device_key: str,
+    pool: DevicePool,
+) -> List[ZKAttendance]:
+    """Try cache first for attendance, fall back to device fetch."""
+    from abcfood_fingerprint.core.cache import get_cache
+
+    cached = get_cache().get_records_raw(device_key)
+    if cached is not None:
+        logger.info("Backup using cached attendance for %s: %d records", device_key, len(cached))
+        return cached
+
+    logger.info("Backup cache miss for %s, fetching from device", device_key)
+    client = pool.get_client(device_key)
+    with client.connect() as c:
+        return c.get_attendance()
 
 
 def list_backups(device_key: Optional[str] = None) -> List[Dict[str, Any]]:

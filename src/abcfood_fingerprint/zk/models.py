@@ -83,5 +83,7 @@ class BackupRecord(BaseModel):
     timestamp: str
     users: List[ZKUser] = Field(default_factory=list)
     fingerprints: List[ZKFingerprint] = Field(default_factory=list)
+    attendance: List[ZKAttendance] = Field(default_factory=list)
     user_count: int = 0
     fingerprint_count: int = 0
+    attendance_count: int = 0

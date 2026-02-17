@@ -20,16 +20,20 @@ console = Console()
 @app.command("run")
 def backup_run(
     device: str = typer.Argument(help="Device key to backup"),
+    include_attendance: bool = typer.Option(
+        False, "--include-attendance", help="Include attendance records in backup"
+    ),
 ):
-    """Run a full backup (users + fingerprints) to S3."""
+    """Run a full backup (users + fingerprints + optional attendance) to S3."""
     from abcfood_fingerprint.core.backup import run_backup
     from abcfood_fingerprint.utils.notifications import notify_backup_success
 
-    result = run_backup(device)
+    result = run_backup(device, include_attendance=include_attendance)
 
     console.print(f"[green]Backup complete for {device}[/green]")
     console.print(f"  Users: {result['user_count']}")
     console.print(f"  Fingerprints: {result['fingerprint_count']}")
+    console.print(f"  Attendance: {result['attendance_count']}")
     console.print(f"  S3 Key: [cyan]{result['s3_key']}[/cyan]")
 
     notify_backup_success(
@@ -37,6 +41,7 @@ def backup_run(
         users=result["user_count"],
         fingerprints=result["fingerprint_count"],
         s3_key=result["s3_key"],
+        attendance=result["attendance_count"],
     )
 
 

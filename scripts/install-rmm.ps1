@@ -144,6 +144,14 @@ $VENV_PYTHON = "$INSTALL_DIR\venv\Scripts\python.exe"
 
 Write-Host "  ABCFoodFingerprint service registered" -ForegroundColor Green
 
+# Secure file permissions
+Write-Host "  Securing file permissions..." -ForegroundColor Yellow
+icacls $INSTALL_DIR /inheritance:r /grant "NT AUTHORITY\SYSTEM:(OI)(CI)F" /grant "BUILTIN\Administrators:(OI)(CI)F" 2>$null
+if (Test-Path "$INSTALL_DIR\.env") {
+    icacls "$INSTALL_DIR\.env" /inheritance:r /grant "NT AUTHORITY\SYSTEM:(R)" /grant "BUILTIN\Administrators:(F)" 2>$null
+}
+Write-Host "  File permissions secured" -ForegroundColor Green
+
 # Start service
 & $NSSM_EXE start ABCFoodFingerprint
 Write-Host "  ABCFoodFingerprint service started" -ForegroundColor Green

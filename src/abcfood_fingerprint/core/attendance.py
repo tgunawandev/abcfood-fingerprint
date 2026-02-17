@@ -16,8 +16,28 @@ def get_attendance(
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None,
     pool: Optional[DevicePool] = None,
+    use_cache: bool = True,
 ) -> List[ZKAttendance]:
-    """Get attendance records from a device with optional date filtering."""
+    """Get attendance records from a device with optional date filtering.
+
+    Tries the in-memory cache first (instant). Falls back to device fetch
+    on cache miss or when ``use_cache=False``.
+    """
+    if use_cache:
+        from abcfood_fingerprint.core.cache import get_cache
+
+        cached = get_cache().get(device_key, date_from, date_to)
+        if cached is not None:
+            logger.info(
+                "Cache hit for %s: %d records (from=%s to=%s)",
+                device_key,
+                len(cached),
+                date_from,
+                date_to,
+            )
+            return cached
+
+    # Cache miss — fetch from device (slow)
     p = pool or get_pool()
     client = p.get_client(device_key)
 

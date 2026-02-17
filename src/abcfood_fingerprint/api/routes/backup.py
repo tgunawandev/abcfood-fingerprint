@@ -20,13 +20,14 @@ class RestoreRequest(BaseModel):
 @router.post("/backup/{device}")
 def trigger_backup(
     device: str,
+    include_attendance: bool = Query(False, description="Include attendance records in backup"),
     pool: DevicePool = Depends(get_device_pool),
 ):
     """Trigger a full backup of a device to S3."""
     from abcfood_fingerprint.core.backup import run_backup
 
     try:
-        result = run_backup(device, pool)
+        result = run_backup(device, pool, include_attendance=include_attendance)
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Device '{device}' not found")
     except Exception as e:
