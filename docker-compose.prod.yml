@@ -1,0 +1,37 @@
+services:
+  fingerprint-init:
+    image: ghcr.io/tgunawandev/abcfood-fingerprint:latest
+    container_name: fingerprint-init
+    env_file:
+      - .env.prod
+    volumes:
+      - ./config:/app/config:ro
+    network_mode: "host"
+    command: ["init-check", "--retry", "5", "--retry-delay", "10"]
+    restart: "no"
+
+  fingerprint-app:
+    image: ghcr.io/tgunawandev/abcfood-fingerprint:latest
+    container_name: fingerprint-app
+    env_file:
+      - .env.prod
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+    network_mode: "host"
+    command: ["serve"]
+    restart: unless-stopped
+    depends_on:
+      fingerprint-init:
+        condition: service_completed_successfully
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s

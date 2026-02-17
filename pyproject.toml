@@ -1,0 +1,85 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "abcfood-fingerprint"
+version = "1.0.0"
+description = "ZKTeco fingerprint middleware service for ABCFood HRIS"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+authors = [
+    { name = "Tri Gunawan", email = "tri.gunawan@abcfood.com" }
+]
+keywords = ["zkteco", "fingerprint", "attendance", "middleware", "hris"]
+
+dependencies = [
+    # CLI and UI
+    "typer>=0.9.0,<1.0.0",
+    "rich>=13.7.0,<14.0.0",
+    # Web Framework
+    "fastapi>=0.100.0,<1.0.0",
+    "uvicorn[standard]>=0.23.0,<1.0.0",
+    # Configuration
+    "pydantic>=2.0.0,<3.0.0",
+    "pydantic-settings>=2.0.0,<3.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    # ZKTeco
+    "pyzk>=0.9",
+    # AWS S3
+    "boto3>=1.28.0,<2.0.0",
+    # Odoo RPC (for user sync)
+    "odoorpc>=0.10.0,<0.11.0",
+    # YAML config
+    "pyyaml>=6.0.0,<7.0.0",
+    # Retry logic
+    "tenacity>=8.2.0,<10.0.0",
+    # HTTP
+    "requests>=2.28.0,<3.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/tgunawandev/abcfood-fingerprint"
+Repository = "https://github.com/tgunawandev/abcfood-fingerprint"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0,<9.0.0",
+    "pytest-cov>=4.0.0,<6.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "ruff>=0.1.0,<1.0.0",
+    "mypy>=1.0.0,<2.0.0",
+    "httpx>=0.24.0,<1.0.0",
+]
+
+[project.scripts]
+fingerprint-ctl = "abcfood_fingerprint.main:app"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/abcfood_fingerprint"]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B", "SIM", "UP", "RUF"]
+ignore = ["E501", "UP007"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["abcfood_fingerprint"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+python_files = ["test_*.py"]
+addopts = "-v --cov=src/abcfood_fingerprint --cov-report=term-missing"

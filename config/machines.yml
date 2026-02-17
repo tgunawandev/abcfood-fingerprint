@@ -1,0 +1,15 @@
+devices:
+  tmi:
+    name: "TMI"
+    ip: "192.168.168.20"
+    port: 4370
+    password: 0
+    model: "X100-C"
+    serial: "97622"
+  outsourcing:
+    name: "Outsourcing"
+    ip: "192.168.168.36"
+    port: 4370
+    password: 0
+    model: "X100-C"
+    serial: "104108"

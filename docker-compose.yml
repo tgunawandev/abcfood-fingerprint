@@ -1,0 +1,20 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: ghcr.io/tgunawandev/abcfood-fingerprint:latest
+    container_name: fingerprint-dev
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - ./.env.local:/app/.env.local:ro
+      - ./.env:/app/.env:ro
+    env_file:
+      - .env
+    environment:
+      - ENVIRONMENT=development
+      - PYTHONPATH=/app
+    network_mode: "host"
+    command: list
+    restart: unless-stopped
