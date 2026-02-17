@@ -44,12 +44,12 @@ def count_attendance(
     device_key: str,
     pool: Optional[DevicePool] = None,
 ) -> int:
-    """Count attendance records on a device."""
+    """Count attendance records on a device (fast, uses read_sizes)."""
     p = pool or get_pool()
     client = p.get_client(device_key)
     with client.connect() as c:
-        records = c.get_attendance()
-    return len(records)
+        sizes = c.read_sizes()
+    return sizes["records"]
 
 
 def format_for_odoo(

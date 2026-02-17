@@ -20,6 +20,13 @@ class AttendanceRecord(BaseModel):
     punch: int
 
 
+class AttendanceResponse(BaseModel):
+    data: List[AttendanceRecord]
+    total: int
+    limit: int
+    offset: int
+
+
 class AttendanceCountResponse(BaseModel):
     device: str
     count: int
@@ -30,9 +37,11 @@ def get_attendance(
     device: str,
     date_from: Optional[str] = Query(None, alias="from", description="Start date YYYY-MM-DD"),
     date_to: Optional[str] = Query(None, alias="to", description="End date YYYY-MM-DD"),
+    limit: int = Query(1000, ge=1, le=10000, description="Max records to return"),
+    offset: int = Query(0, ge=0, description="Number of records to skip"),
     pool: DevicePool = Depends(get_device_pool),
 ):
-    """Get attendance records from a device with optional date filtering."""
+    """Get attendance records with date filtering and pagination."""
     from abcfood_fingerprint.core.attendance import get_attendance as _get
 
     dt_from = datetime.strptime(date_from, "%Y-%m-%d") if date_from else None
@@ -49,15 +58,23 @@ def get_attendance(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    return [
-        AttendanceRecord(
-            user_id=r.user_id,
-            timestamp=r.timestamp.isoformat(),
-            status=r.status,
-            punch=r.punch,
-        )
-        for r in records
-    ]
+    total = len(records)
+    page = records[offset : offset + limit]
+
+    return AttendanceResponse(
+        data=[
+            AttendanceRecord(
+                user_id=r.user_id,
+                timestamp=r.timestamp.isoformat(),
+                status=r.status,
+                punch=r.punch,
+            )
+            for r in page
+        ],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.get("/attendance/{device}/count")

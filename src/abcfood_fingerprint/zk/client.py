@@ -148,7 +148,7 @@ class ZKClient:
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, max=10))
     def get_device_info(self) -> ZKDeviceInfo:
-        """Get device information."""
+        """Get device information using read_sizes() for fast record counts."""
         self._ensure_connected()
         firmware = ""
         serial = ""
@@ -176,28 +176,17 @@ class ZKClient:
         except Exception:
             pass
 
+        # Use read_sizes() for fast record counts (~0.1s vs 138s for get_attendance)
         user_count = 0
-        try:
-            users = self._conn.get_users() or []
-            user_count = len(users)
-        except Exception:
-            pass
-
+        fp_count = 0
         attendance_count = 0
         try:
-            attendance_count = len(self._conn.get_attendance() or [])
+            self._conn.read_sizes()
+            user_count = getattr(self._conn, "users", 0) or 0
+            fp_count = getattr(self._conn, "fingers", 0) or 0
+            attendance_count = getattr(self._conn, "records", 0) or 0
         except Exception:
-            pass
-
-        fp_count = 0
-        try:
-            fp_count = self._conn.get_fp_version() or 0
-        except Exception:
-            try:
-                templates = self._conn.get_templates() or []
-                fp_count = len(templates)
-            except Exception:
-                pass
+            logger.warning("read_sizes() failed for %s, counts will be 0", self.config.name)
 
         device_time = None
         try:
@@ -216,6 +205,17 @@ class ZKClient:
             attendance_count=attendance_count,
             device_time=device_time,
         )
+
+    def read_sizes(self) -> dict:
+        """Read device record counts (fast, no data transfer)."""
+        self._ensure_connected()
+        self._conn.read_sizes()
+        return {
+            "users": getattr(self._conn, "users", 0) or 0,
+            "fingers": getattr(self._conn, "fingers", 0) or 0,
+            "records": getattr(self._conn, "records", 0) or 0,
+            "faces": getattr(self._conn, "faces", 0) or 0,
+        }
 
     def get_time(self) -> Optional[datetime]:
         """Get device time."""
